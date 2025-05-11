@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/voting" class="nav-link">Dashboard</a>
+            <a href="/profile" class="nav-link">Profile</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Cast Your Vote</h1>
+
+        <% if (error) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <div class="election-details">
+                    <h2>
+                        <%= election.title %>
+                    </h2>
+                    <p>
+                        <%= election.description %>
+                    </p>
+                    <div class="election-meta">
+                        <p><strong>Start Date:</strong>
+                            <%= new Date(election.startDate).toLocaleDateString() %>
+                        </p>
+                        <p><strong>End Date:</strong>
+                            <%= new Date(election.endDate).toLocaleDateString() %>
+                        </p>
+                    </div>
+                </div>
+
+                <form action="/voting/vote" method="POST" class="voting-form">
+                    <input type="hidden" name="electionId" value="<%= election._id %>">
+
+                    <div class="candidates-list">
+                        <h3>Select Your Candidate</h3>
+                        <% if (election.candidates.length===0) { %>
+                            <p>No candidates available.</p>
+                            <% } else { %>
+                                <% election.candidates.forEach(candidate=> { %>
+                                    <div class="candidate-option">
+                                        <input type="radio" id="candidate-<%= candidate._id %>" name="candidateId"
+                                            value="<%= candidate._id %>" required>
+                                        <label for="candidate-<%= candidate._id %>">
+                                            <h4>
+                                                <%= candidate.name %>
+                                            </h4>
+                                            <p>
+                                                <%= candidate.description %>
+                                            </p>
+                                        </label>
+                                    </div>
+                                    <% }); %>
+                                        <% } %>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn">Submit Vote</button>
+                        <a href="/voting" class="btn secondary">Cancel</a>
+                    </div>
+                </form>
+    </div>
+</body>
+
+</html>

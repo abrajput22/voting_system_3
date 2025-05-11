@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/profile" class="nav-link">Profile</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+
+        <% if (typeof error !=='undefined' ) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <div class="admin-actions">
+                    <a href="/admin/create" class="btn">Create New Election</a>
+                </div>
+
+                <div class="elections-list">
+                    <h2>All Elections</h2>
+                    <% if (elections.length===0) { %>
+                        <p>No elections found.</p>
+                        <% } else { %>
+                            <% elections.forEach(election=> { %>
+                                <div class="election-card">
+                                    <h3>
+                                        <%= election.title %>
+                                    </h3>
+                                    <p>
+                                        <%= election.description %>
+                                    </p>
+                                    <div class="election-meta">
+                                        <p><strong>Status:</strong>
+                                            <%= election.status %>
+                                        </p>
+                                        <p><strong>Start Date:</strong>
+                                            <%= new Date(election.startDate).toLocaleDateString() %>
+                                        </p>
+                                        <p><strong>End Date:</strong>
+                                            <%= new Date(election.endDate).toLocaleDateString() %>
+                                        </p>
+                                        <p><strong>Candidates:</strong>
+                                            <%= election.candidates.length %>
+                                        </p>
+                                    </div>
+                                    <div class="election-actions">
+                                        <a href="/admin/results/<%= election._id %>" class="btn">View Results</a>
+                                        <form action="/admin/status/<%= election._id %>" method="POST"
+                                            style="display: inline;">
+                                            <select name="status" onchange="this.form.submit()">
+                                                <option value="upcoming" <%=election.status==='upcoming' ? 'selected'
+                                                    : '' %>>Upcoming</option>
+                                                <option value="active" <%=election.status==='active' ? 'selected' : ''
+                                                    %>>Active</option>
+                                                <option value="completed" <%=election.status==='completed' ? 'selected'
+                                                    : '' %>>Completed</option>
+                                            </select>
+                                        </form>
+                                        <form action="/admin/delete/<%= election._id %>" method="POST"
+                                            style="display: inline;">
+                                            <button type="submit" class="btn"
+                                                onclick="return confirm('Are you sure you want to delete this election?')">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <% }); %>
+                                    <% } %>
+                </div>
+    </div>
+
+    <script src="/js/script.js"></script>
+</body>
+
+</html>

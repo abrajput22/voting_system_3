@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <% if (user) { %>
+                <% if (user.role==='admin' ) { %>
+                    <a href="/admin" class="nav-link">Admin Dashboard</a>
+                    <% } else { %>
+                        <a href="/voting" class="nav-link">Vote</a>
+                        <% } %>
+                            <a href="/profile" class="nav-link">Profile</a>
+                            <a href="/auth/logout" class="nav-link">Logout</a>
+                            <% } else { %>
+                                <a href="/auth/login" class="nav-link">Login</a>
+                                <a href="/auth/register" class="nav-link">Register</a>
+                                <% } %>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Welcome to Online Voting System</h1>
+            <p>A secure and transparent way to conduct elections</p>
+
+            <% if (user) { %>
+                <% if (user.role==='admin' ) { %>
+                    <a href="/admin" class="btn">Go to Admin Dashboard</a>
+                    <% } else { %>
+                        <a href="/voting" class="btn">Go to Voting Dashboard</a>
+                        <% } %>
+                            <% } else { %>
+                                <div class="auth-buttons">
+                                    <a href="/auth/login" class="btn">Login</a>
+                                    <a href="/auth/register" class="btn">Register</a>
+                                </div>
+                                <% } %>
+        </div>
+
+        <% if (typeof error !=='undefined' ) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+    </div>
+
+    <script src="/js/script.js"></script>
+</body>
+
+</html>

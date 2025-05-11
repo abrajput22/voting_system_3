@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Dashboard - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/profile" class="nav-link">Profile</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Active Elections</h1>
+
+        <% if (typeof error !=='undefined' ) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <% if (elections.length===0) { %>
+                    <div class="no-elections">
+                        <p>There are no active elections at the moment.</p>
+                    </div>
+                    <% } else { %>
+                        <div class="elections-grid">
+                            <% elections.forEach(election=> { %>
+                                <div class="election-card">
+                                    <h2>
+                                        <%= election.title %>
+                                    </h2>
+                                    <p>
+                                        <%= election.description %>
+                                    </p>
+                                    <div class="election-meta">
+                                        <p><strong>End Date:</strong>
+                                            <%= new Date(election.endDate).toLocaleDateString() %>
+                                        </p>
+                                        <p><strong>Candidates:</strong>
+                                            <%= election.candidates.length %>
+                                        </p>
+                                    </div>
+                                    <a href="/voting/election/<%= election._id %>" class="btn">View & Vote</a>
+                                </div>
+                                <% }); %>
+                        </div>
+                        <% } %>
+    </div>
+</body>
+
+</html>

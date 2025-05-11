@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Results - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/voting" class="nav-link">Dashboard</a>
+            <a href="/profile" class="nav-link">Profile</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Election Results</h1>
+
+        <% if (error) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <div class="election-details">
+                    <h2>
+                        <%= election.title %>
+                    </h2>
+                    <p>
+                        <%= election.description %>
+                    </p>
+                    <div class="election-meta">
+                        <p><strong>Status:</strong>
+                            <%= election.status %>
+                        </p>
+                        <p><strong>Start Date:</strong>
+                            <%= new Date(election.startDate).toLocaleDateString() %>
+                        </p>
+                        <p><strong>End Date:</strong>
+                            <%= new Date(election.endDate).toLocaleDateString() %>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="results-section">
+                    <h3>Voting Results</h3>
+                    <% if (election.candidates.length===0) { %>
+                        <p>No candidates in this election.</p>
+                        <% } else { %>
+                            <div class="results-list">
+                                <% election.candidates.forEach(candidate=> { %>
+                                    <div class="candidate-result">
+                                        <h4>
+                                            <%= candidate.name %>
+                                        </h4>
+                                        <p>
+                                            <%= candidate.description %>
+                                        </p>
+                                        <div class="vote-count">
+                                            <strong>Votes:</strong>
+                                            <%= candidate.votes %>
+                                        </div>
+                                    </div>
+                                    <% }); %>
+                            </div>
+                            <% } %>
+                </div>
+
+                <div class="actions">
+                    <a href="/voting" class="btn">Back to Dashboard</a>
+                </div>
+    </div>
+</body>
+
+</html>

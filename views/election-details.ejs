@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= election.title %> - Online Voting System
+    </title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/voting" class="nav-link">Back to Voting</a>
+            <a href="/profile" class="nav-link">Profile</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="election-details">
+            <h1>
+                <%= election.title %>
+            </h1>
+            <p class="election-description">
+                <%= election.description %>
+            </p>
+
+            <div class="election-info">
+                <p><strong>Status:</strong>
+                    <%= election.status %>
+                </p>
+                <p><strong>Start Date:</strong>
+                    <%= new Date(election.startDate).toLocaleDateString() %>
+                </p>
+                <p><strong>End Date:</strong>
+                    <%= new Date(election.endDate).toLocaleDateString() %>
+                </p>
+            </div>
+
+            <% if (typeof error !=='undefined' ) { %>
+                <div class="error-message">
+                    <%= error %>
+                </div>
+                <% } %>
+
+                    <div class="candidates-list">
+                        <h2>Candidates</h2>
+                        <form action="/voting/vote" method="POST" class="voting-form">
+                            <input type="hidden" name="electionId" value="<%= election._id %>">
+                            <% election.candidates.forEach(candidate=> { %>
+                                <div class="candidate-card">
+                                    <h3>
+                                        <%= candidate.name %>
+                                    </h3>
+                                    <p>
+                                        <%= candidate.description %>
+                                    </p>
+                                    <button type="submit" name="candidateId" value="<%= candidate._id %>"
+                                        class="btn vote-btn">
+                                        Vote for <%= candidate.name %>
+                                    </button>
+                                </div>
+                                <% }); %>
+                        </form>
+                    </div>
+        </div>
+    </div>
+</body>
+
+</html>

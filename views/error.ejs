@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/auth/login" class="nav-link">Login</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="error-container">
+            <h1>Error</h1>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <div class="actions">
+                <a href="/" class="btn">Go Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

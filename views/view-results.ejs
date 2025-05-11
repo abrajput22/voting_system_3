@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Results - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/admin" class="nav-link">Back to Dashboard</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Election Results: <%= election.title %>
+        </h1>
+        <p>
+            <%= election.description %>
+        </p>
+        <p>Status: <%= election.status %>
+        </p>
+
+        <div class="results">
+            <h2>Vote Count</h2>
+            <% election.candidates.forEach(candidate=> { %>
+                <div class="result-item">
+                    <span>
+                        <%= candidate.name %>
+                    </span>
+                    <span>
+                        <%= candidate.votes %> votes
+                    </span>
+                </div>
+                <% }); %>
+        </div>
+
+        <div class="button-group">
+            <a href="/admin" class="btn">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script src="/js/script.js"></script>
+</body>
+
+</html>

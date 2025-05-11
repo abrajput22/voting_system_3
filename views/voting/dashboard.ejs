@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Dashboard - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/voting" class="nav-link">Dashboard</a>
+            <a href="/profile" class="nav-link">Profile</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Voting Dashboard</h1>
+
+        <% if (error) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+                <% if (success) { %>
+                    <div class="success-message">
+                        <%= success %>
+                    </div>
+                    <% } %>
+
+                        <div class="elections-section">
+                            <h2>Active Elections</h2>
+                            <% if (activeElections.length===0) { %>
+                                <p>No active elections available.</p>
+                                <% } else { %>
+                                    <div class="elections-list">
+                                        <% activeElections.forEach(election=> { %>
+                                            <div class="election-card">
+                                                <h3>
+                                                    <%= election.title %>
+                                                </h3>
+                                                <p>
+                                                    <%= election.description %>
+                                                </p>
+                                                <div class="election-meta">
+                                                    <p><strong>Start Date:</strong>
+                                                        <%= new Date(election.startDate).toLocaleDateString() %>
+                                                    </p>
+                                                    <p><strong>End Date:</strong>
+                                                        <%= new Date(election.endDate).toLocaleDateString() %>
+                                                    </p>
+                                                    <p><strong>Candidates:</strong>
+                                                        <%= election.candidates.length %>
+                                                    </p>
+                                                </div>
+                                                <div class="election-actions">
+                                                    <a href="/voting/election/<%= election._id %>" class="btn">Vote
+                                                        Now</a>
+                                                </div>
+                                            </div>
+                                            <% }); %>
+                                    </div>
+                                    <% } %>
+                        </div>
+    </div>
+</body>
+
+</html>

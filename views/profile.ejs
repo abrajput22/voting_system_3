@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <% if (user.role==='admin' ) { %>
+                <a href="/admin" class="nav-link">Admin Dashboard</a>
+                <% } else { %>
+                    <a href="/voting" class="nav-link">Vote</a>
+                    <% } %>
+                        <a href="/profile" class="nav-link">Profile</a>
+                        <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="profile-card">
+            <div class="profile-info">
+                <h2>Profile Information</h2>
+                <form action="/profile/update" method="POST">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" value="<%= user.name %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="<%= user.email %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <input type="text" id="role" value="<%= user.role %>" disabled>
+                    </div>
+                    <button type="submit" class="btn">Update Profile</button>
+                </form>
+            </div>
+
+            <div class="voting-history">
+                <h2>Voting History</h2>
+                <% if (votedElections.length===0) { %>
+                    <p>You haven't voted in any elections yet.</p>
+                    <% } else { %>
+                        <% votedElections.forEach(election=> { %>
+                            <div class="history-item">
+                                <h3>
+                                    <%= election.title %>
+                                </h3>
+                                <p><strong>Status:</strong>
+                                    <%= election.status %>
+                                </p>
+                                <p><strong>Date:</strong>
+                                    <%= new Date(election.createdAt).toLocaleDateString() %>
+                                </p>
+                            </div>
+                            <% }); %>
+                                <% } %>
+            </div>
+        </div>
+
+        <% if (typeof error !=='undefined' ) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+    </div>
+
+    <script src="/js/script.js"></script>
+</body>
+
+</html>

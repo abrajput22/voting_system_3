@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/auth/login" class="nav-link">Login</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="auth-form">
+            <h1>Create Account</h1>
+            <p class="auth-message">Join our online voting system. You can register with your email or use Google to
+                sign up.</p>
+
+            <% if (error) { %>
+                <div class="error-message">
+                    <%= error %>
+                </div>
+                <% } %>
+
+                    <div class="social-auth">
+                        <a href="/auth/google" class="btn google-btn">
+                            <img src="/images/google-icon.png" alt="Google Icon" class="google-icon">
+                            Sign up with Google
+                        </a>
+                    </div>
+
+                    <div class="auth-divider">
+                        <span>or</span>
+                    </div>
+
+                    <form action="/auth/register" method="POST">
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required minlength="6"
+                                placeholder="Create a password (minimum 6 characters)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6"
+                                placeholder="Confirm your password">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn">Create Account</button>
+                        </div>
+                    </form>
+
+                    <div class="auth-links">
+                        <p>Already have an account? <a href="/auth/login">Login here</a></p>
+                    </div>
+        </div>
+    </div>
+
+    <script>
+        // Client-side password validation
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+            }
+        });
+    </script>
+</body>
+
+</html>
