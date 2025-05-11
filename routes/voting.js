@@ -16,14 +16,16 @@ router.get('/', isAuthenticated, async (req, res) => {
 
         res.render('voting/dashboard', {
             user: req.session.user,
-            activeElections
+            activeElections,
+            error: req.query.error,
+            success: req.query.success
         });
     } catch (error) {
         console.error('Voting dashboard error:', error);
-        req.flash('error_msg', 'Failed to load elections');
         res.render('voting/dashboard', {
             user: req.session.user,
-            activeElections: []
+            activeElections: [],
+            error: 'Failed to load elections'
         });
     }
 });
@@ -33,20 +35,17 @@ router.get('/election/:id', isAuthenticated, async (req, res) => {
     try {
         const election = await Election.findById(req.params.id).populate('candidates');
         if (!election) {
-            req.flash('error_msg', 'Election not found');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=Election not found');
         }
 
         if (election.status !== 'active') {
-            req.flash('error_msg', 'This election is not active');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=This election is not active');
         }
 
         // Check if user has already voted
         const user = await User.findById(req.session.user.id);
         if (user.votedElections.includes(election._id)) {
-            req.flash('error_msg', 'You have already voted in this election');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=You have already voted in this election');
         }
 
         res.render('voting/election', {
@@ -55,8 +54,7 @@ router.get('/election/:id', isAuthenticated, async (req, res) => {
         });
     } catch (error) {
         console.error('View election error:', error);
-        req.flash('error_msg', error.message);
-        res.redirect('/voting');
+        res.redirect('/voting?error=' + encodeURIComponent(error.message));
     }
 });
 
@@ -65,33 +63,28 @@ router.post('/vote', isAuthenticated, async (req, res) => {
     try {
         const { electionId, candidateId } = req.body;
         if (!electionId || !candidateId) {
-            req.flash('error_msg', 'Invalid vote data');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=Invalid vote data');
         }
 
         // Check if election exists and is active
         const election = await Election.findById(electionId);
         if (!election) {
-            req.flash('error_msg', 'Election not found');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=Election not found');
         }
         if (election.status !== 'active') {
-            req.flash('error_msg', 'This election is not active');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=This election is not active');
         }
 
         // Check if user has already voted
         const user = await User.findById(req.session.user.id);
         if (user.votedElections.includes(electionId)) {
-            req.flash('error_msg', 'You have already voted in this election');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=You have already voted in this election');
         }
 
         // Check if candidate exists and belongs to the election
         const candidate = await Candidate.findById(candidateId);
         if (!candidate || !election.candidates.includes(candidateId)) {
-            req.flash('error_msg', 'Invalid candidate');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=Invalid candidate');
         }
 
         // Update candidate votes
@@ -113,12 +106,10 @@ router.post('/vote', isAuthenticated, async (req, res) => {
             candidateId
         });
 
-        req.flash('success_msg', 'Vote cast successfully');
-        res.redirect('/voting');
+        res.redirect('/voting?success=Vote cast successfully');
     } catch (error) {
         console.error('Vote casting error:', error);
-        req.flash('error_msg', error.message);
-        res.redirect('/voting');
+        res.redirect('/voting?error=' + encodeURIComponent(error.message));
     }
 });
 
@@ -127,13 +118,11 @@ router.get('/results/:id', isAuthenticated, async (req, res) => {
     try {
         const election = await Election.findById(req.params.id).populate('candidates');
         if (!election) {
-            req.flash('error_msg', 'Election not found');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=Election not found');
         }
 
         if (election.status !== 'completed') {
-            req.flash('error_msg', 'Results are only available for completed elections');
-            return res.redirect('/voting');
+            return res.redirect('/voting?error=Results are only available for completed elections');
         }
 
         res.render('voting/results', {
@@ -142,8 +131,7 @@ router.get('/results/:id', isAuthenticated, async (req, res) => {
         });
     } catch (error) {
         console.error('View results error:', error);
-        req.flash('error_msg', error.message);
-        res.redirect('/voting');
+        res.redirect('/voting?error=' + encodeURIComponent(error.message));
     }
 });
 
