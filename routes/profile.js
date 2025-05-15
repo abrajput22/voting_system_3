@@ -1,27 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { isAuthenticated } = require('../middleware/auth');
-const User = require('../models/User');
-const Election = require('../models/Election');
-const Candidate = require('../models/Candidate');
+const profileController = require('../controllers/profileController');
+
+// Middleware to check if user is authenticated
+const isAuthenticated = (req, res, next) => {
+    if (req.session.user) {
+        return next();
+    }
+    res.redirect('/auth/login');
+};
 
 // Profile page
-router.get('/', isAuthenticated, async (req, res) => {
-    try {
-        const user = await User.findById(req.session.user.id);
-        const votedElections = await Election.find({
-            _id: { $in: user.votedElections }
-        }).populate('candidates');
-
-        res.render('profile', {
-            user: req.session.user,
-            votedElections,
-            error: req.query.error
-        });
-    } catch (error) {
-        res.status(500).render('error', { error: error.message });
-    }
-});
+router.get('/', isAuthenticated, profileController.getProfile);
 
 // Update profile
 router.post('/update', isAuthenticated, async (req, res) => {

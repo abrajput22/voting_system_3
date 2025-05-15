@@ -4,6 +4,8 @@ const { isAuthenticated, isAdmin } = require('../middleware/auth');
 const Election = require('../models/Election');
 const Candidate = require('../models/Candidate');
 const User = require('../models/User');
+const electionController = require('../controllers/electionController');
+const Vote = require('../models/Vote');
 
 // Admin dashboard
 router.get('/', isAuthenticated, isAdmin, async (req, res) => {
@@ -37,37 +39,36 @@ router.get('/create', isAuthenticated, isAdmin, (req, res) => {
 router.post('/create', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const { title, description, startDate, endDate, candidates } = req.body;
-
-        // Validate input
-        if (!title || !description || !startDate || !endDate || !candidates) {
-            return res.redirect('/admin/create?error=All fields are required');
-        }
-
-        // Create candidates
-        const candidatePromises = candidates.map(async (candidate) => {
-            const newCandidate = new Candidate({
-                name: candidate.name,
-                description: candidate.description
-            });
-            return await newCandidate.save();
-        });
-
-        const savedCandidates = await Promise.all(candidatePromises);
-
-        // Create election
-        const election = new Election({
+        console.log('Received election creation request:', {
             title,
             description,
             startDate,
             endDate,
-            candidates: savedCandidates.map(c => c._id),
-            status: 'upcoming'
+            candidates
         });
 
-        await election.save();
-        console.log('Election created successfully:', { title: election.title });
+        // Validate input
+        if (!title || !description || !startDate || !endDate || !candidates) {
+            console.error('Missing required fields:', { title, description, startDate, endDate, candidates });
+            return res.redirect('/admin/create?error=All fields are required');
+        }
 
-        res.redirect('/admin?success=Election created successfully');
+        // Validate candidates array
+        if (!Array.isArray(candidates) || candidates.length === 0) {
+            console.error('Invalid candidates data:', candidates);
+            return res.redirect('/admin/create?error=At least one candidate is required');
+        }
+
+        // Validate each candidate has required fields
+        for (const candidate of candidates) {
+            if (!candidate.name || !candidate.description) {
+                console.error('Invalid candidate data:', candidate);
+                return res.redirect('/admin/create?error=Each candidate must have a name and description');
+            }
+        }
+
+        // Create election using the controller
+        await electionController.createElection(req, res);
     } catch (error) {
         console.error('Create election error:', error);
         res.redirect('/admin/create?error=' + encodeURIComponent(error.message));
@@ -121,15 +122,40 @@ router.post('/delete/:id', isAuthenticated, isAdmin, async (req, res) => {
 // View election results
 router.get('/results/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
-        const election = await Election.findById(req.params.id).populate('candidates');
+        const election = await Election.findById(req.params.id)
+            .populate('candidates')
+            .populate('eligibleVoters.addedBy', 'name email');
 
         if (!election) {
             return res.redirect('/admin?error=Election not found');
         }
 
+        // Get vote counts for each candidate
+        const candidatesWithVotes = await Promise.all(election.candidates.map(async (candidate) => {
+            const voteCount = await Vote.countDocuments({
+                election: election._id,
+                candidate: candidate._id
+            });
+            return {
+                ...candidate.toObject(),
+                votes: voteCount
+            };
+        }));
+
+        // Get total votes cast
+        const totalVotes = await Vote.countDocuments({ election: election._id });
+
+        // Get eligible voters count
+        const eligibleVotersCount = election.eligibleVoters.length;
+
         res.render('admin/results', {
             user: req.session.user,
-            election,
+            election: {
+                ...election.toObject(),
+                candidates: candidatesWithVotes,
+                totalVotes,
+                eligibleVotersCount
+            },
             error: req.query.error
         });
     } catch (error) {
@@ -151,16 +177,21 @@ router.post('/election/:id/add-voter', isAuthenticated, isAdmin, async (req, res
         // Check if voter ID exists
         const user = await User.findOne({ voterId });
         if (!user) {
-            return res.redirect(`/admin/election/${election._id}?error=Invalid voter ID`);
+            return res.redirect(`/admin?error=Invalid voter ID`);
         }
 
         // Add voter if not already in the list
-        if (!election.eligibleVoters.includes(voterId)) {
-            election.eligibleVoters.push(voterId);
+        const isAlreadyEligible = election.eligibleVoters.some(voter => voter.voterId === voterId);
+        if (!isAlreadyEligible) {
+            election.eligibleVoters.push({
+                voterId: voterId,
+                addedBy: req.session.user.id
+            });
             await election.save();
+            return res.redirect(`/admin?success=Voter added successfully`);
         }
 
-        res.redirect(`/admin/election/${election._id}?success=Voter added successfully`);
+        res.redirect(`/admin?error=Voter is already eligible for this election`);
     } catch (error) {
         console.error('Add voter error:', error);
         res.redirect('/admin?error=' + encodeURIComponent(error.message));
@@ -178,10 +209,15 @@ router.post('/election/:id/remove-voter', isAuthenticated, isAdmin, async (req, 
         }
 
         // Remove voter from the list
-        election.eligibleVoters = election.eligibleVoters.filter(id => id !== voterId);
-        await election.save();
+        const initialLength = election.eligibleVoters.length;
+        election.eligibleVoters = election.eligibleVoters.filter(voter => voter.voterId !== voterId);
 
-        res.redirect(`/admin/election/${election._id}?success=Voter removed successfully`);
+        if (election.eligibleVoters.length !== initialLength) {
+            await election.save();
+            return res.redirect(`/admin?success=Voter removed successfully`);
+        }
+
+        res.redirect(`/admin?error=Voter is not in the eligible list`);
     } catch (error) {
         console.error('Remove voter error:', error);
         res.redirect('/admin?error=' + encodeURIComponent(error.message));
@@ -198,18 +234,27 @@ router.get('/election/:id/search-voter', isAuthenticated, isAdmin, async (req, r
             return res.redirect('/admin?error=Election not found');
         }
 
-        const isEligible = election.eligibleVoters.includes(voterId);
         const user = await User.findOne({ voterId });
+        if (!user) {
+            return res.render('admin/search-voter', {
+                user: req.session.user,
+                election,
+                searchResult: null,
+                error: 'No voter found with the provided Voter ID'
+            });
+        }
+
+        const isEligible = election.isVoterEligible(voterId);
 
         res.render('admin/search-voter', {
             user: req.session.user,
             election,
-            searchResult: user ? {
+            searchResult: {
                 voterId: user.voterId,
                 name: user.name,
                 email: user.email,
                 isEligible
-            } : null,
+            },
             error: req.query.error,
             success: req.query.success
         });
@@ -218,5 +263,19 @@ router.get('/election/:id/search-voter', isAuthenticated, isAdmin, async (req, r
         res.redirect('/admin?error=' + encodeURIComponent(error.message));
     }
 });
+
+// Voter management routes
+router.post('/election/:electionId/voters', isAuthenticated, isAdmin, electionController.addVoter);
+router.delete('/election/:electionId/voters', isAuthenticated, isAdmin, electionController.removeVoter);
+
+// Candidate management routes
+router.post('/election/:electionId/candidates', isAuthenticated, isAdmin, electionController.addCandidate);
+router.delete('/election/:electionId/candidates/:candidateId', isAuthenticated, isAdmin, electionController.removeCandidate);
+
+// Election results route
+router.get('/election/:electionId/results', isAuthenticated, isAdmin, electionController.getResults);
+
+// Check voter eligibility route
+router.get('/election/:electionId/check-eligibility', isAuthenticated, electionController.checkEligibility);
 
 module.exports = router;

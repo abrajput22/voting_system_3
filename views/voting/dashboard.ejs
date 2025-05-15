@@ -12,7 +12,6 @@
     <nav class="navbar">
         <a href="/" class="nav-brand">Online Voting System</a>
         <div class="nav-links">
-            <a href="/voting" class="nav-link">Dashboard</a>
             <a href="/profile" class="nav-link">Profile</a>
             <a href="/auth/logout" class="nav-link">Logout</a>
         </div>
@@ -26,6 +25,7 @@
                 <%= error %>
             </div>
             <% } %>
+
                 <% if (success) { %>
                     <div class="success-message">
                         <%= success %>
@@ -37,8 +37,57 @@
                             <% if (activeElections.length===0) { %>
                                 <p>No active elections available.</p>
                                 <% } else { %>
-                                    <div class="elections-list">
+                                    <div class="elections-grid">
                                         <% activeElections.forEach(election=> { %>
+                                            <div
+                                                class="election-card <%= !election.isEligible ? 'not-eligible' : '' %>">
+                                                <h3>
+                                                    <%= election.title %>
+                                                </h3>
+                                                <p>
+                                                    <%= election.description %>
+                                                </p>
+                                                <div class="election-meta">
+                                                    <p><strong>Start Date:</strong>
+                                                        <%= new Date(election.startDate).toLocaleDateString() %>
+                                                    </p>
+                                                    <p><strong>End Date:</strong>
+                                                        <%= new Date(election.endDate).toLocaleDateString() %>
+                                                    </p>
+                                                    <p><strong>Candidates:</strong>
+                                                        <%= election.candidates.length %>
+                                                    </p>
+                                                    <p class="eligibility-status">
+                                                        <% if (election.isEligible) { %>
+                                                            <span class="eligible">You are eligible to vote in this
+                                                                election</span>
+                                                            <% } else { %>
+                                                                <span class="not-eligible">You are not eligible to vote
+                                                                    in this election</span>
+                                                                <% } %>
+                                                    </p>
+                                                </div>
+                                                <div class="election-actions">
+                                                    <% if (election.isEligible) { %>
+                                                        <a href="/voting/election/<%= election._id %>" class="btn">Vote
+                                                            Now</a>
+                                                        <% } else { %>
+                                                            <button class="btn disabled" disabled>Not Eligible</button>
+                                                            <% } %>
+                                                </div>
+                                            </div>
+                                            <% }); %>
+                                    </div>
+                                    <% } %>
+                        </div>
+
+                        <div class="elections-section">
+                            <h2>Completed Elections</h2>
+                            <% if (completedElections.length===0) { %>
+                                <p>No completed elections.</p>
+                                <% } else { %>
+                                    <div class="elections-grid">
+                                        <% completedElections.forEach(election=> { %>
                                             <div class="election-card">
                                                 <h3>
                                                     <%= election.title %>
@@ -58,8 +107,8 @@
                                                     </p>
                                                 </div>
                                                 <div class="election-actions">
-                                                    <a href="/voting/election/<%= election._id %>" class="btn">Vote
-                                                        Now</a>
+                                                    <a href="/voting/results/<%= election._id %>" class="btn">View
+                                                        Results</a>
                                                 </div>
                                             </div>
                                             <% }); %>

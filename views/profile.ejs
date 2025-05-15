@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Online Voting System</title>
+    <title>User Profile - Online Voting System</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 
@@ -15,61 +15,116 @@
             <% if (user.role==='admin' ) { %>
                 <a href="/admin" class="nav-link">Admin Dashboard</a>
                 <% } else { %>
-                    <a href="/voting" class="nav-link">Vote</a>
+                    <a href="/voting" class="nav-link">Dashboard</a>
                     <% } %>
-                        <a href="/profile" class="nav-link">Profile</a>
+                        <a href="/profile" class="nav-link active">Profile</a>
                         <a href="/auth/logout" class="nav-link">Logout</a>
         </div>
     </nav>
 
     <div class="container">
-        <div class="profile-card">
-            <div class="profile-info">
-                <h2>Profile Information</h2>
-                <form action="/profile/update" method="POST">
-                    <div class="form-group">
-                        <label for="name">Name</label>
-                        <input type="text" id="name" name="name" value="<%= user.name %>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" value="<%= user.email %>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="role">Role</label>
-                        <input type="text" id="role" value="<%= user.role %>" disabled>
-                    </div>
-                    <button type="submit" class="btn">Update Profile</button>
-                </form>
-            </div>
+        <h1>User Profile</h1>
 
-            <div class="voting-history">
-                <h2>Voting History</h2>
-                <% if (votedElections.length===0) { %>
-                    <p>You haven't voted in any elections yet.</p>
-                    <% } else { %>
-                        <% votedElections.forEach(election=> { %>
-                            <div class="history-item">
-                                <h3>
-                                    <%= election.title %>
-                                </h3>
-                                <p><strong>Status:</strong>
-                                    <%= election.status %>
-                                </p>
-                                <p><strong>Date:</strong>
-                                    <%= new Date(election.createdAt).toLocaleDateString() %>
-                                </p>
-                            </div>
-                            <% }); %>
-                                <% } %>
-            </div>
-        </div>
-
-        <% if (typeof error !=='undefined' ) { %>
+        <% if (error) { %>
             <div class="error-message">
                 <%= error %>
             </div>
             <% } %>
+
+                <% if (success) { %>
+                    <div class="success-message">
+                        <%= success %>
+                    </div>
+                    <% } %>
+
+                        <!-- Personal Information Section -->
+                        <section class="profile-section">
+                            <h2>Personal Information</h2>
+                            <div class="profile-card">
+                                <div class="profile-info">
+                                    <p><strong>Name:</strong>
+                                        <%= user.name %>
+                                    </p>
+                                    <p><strong>Email:</strong>
+                                        <%= user.email %>
+                                    </p>
+                                    <p><strong>Voter ID:</strong>
+                                        <%= user.voterId %>
+                                    </p>
+                                    <p><strong>Role:</strong>
+                                        <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Eligible Elections Section -->
+                        <section class="profile-section">
+                            <h2>Eligible Elections</h2>
+                            <% if (eligibleElections && eligibleElections.length> 0) { %>
+                                <div class="elections-grid">
+                                    <% eligibleElections.forEach(election=> { %>
+                                        <div class="election-card">
+                                            <h3>
+                                                <%= election.title %>
+                                            </h3>
+                                            <p>
+                                                <%= election.description %>
+                                            </p>
+                                            <div class="election-meta">
+                                                <p><strong>Start Date:</strong>
+                                                    <%= new Date(election.startDate).toLocaleDateString() %>
+                                                </p>
+                                                <p><strong>End Date:</strong>
+                                                    <%= new Date(election.endDate).toLocaleDateString() %>
+                                                </p>
+                                                <p><strong>Candidates:</strong>
+                                                    <%= election.candidates.length %>
+                                                </p>
+                                            </div>
+                                            <div class="election-actions">
+                                                <a href="/voting/election/<%= election._id %>" class="btn">Vote Now</a>
+                                            </div>
+                                        </div>
+                                        <% }); %>
+                                </div>
+                                <% } else { %>
+                                    <p class="no-data">No eligible elections available at the moment.</p>
+                                    <% } %>
+                        </section>
+
+                        <!-- Voted Elections Section -->
+                        <section class="profile-section">
+                            <h2>Voted Elections</h2>
+                            <% if (votedElections && votedElections.length> 0) { %>
+                                <div class="elections-grid">
+                                    <% votedElections.forEach(election=> { %>
+                                        <div class="election-card voted">
+                                            <h3>
+                                                <%= election.title %>
+                                            </h3>
+                                            <p>
+                                                <%= election.description %>
+                                            </p>
+                                            <div class="election-meta">
+                                                <p><strong>Voted On:</strong>
+                                                    <%= new Date(election.votedAt).toLocaleDateString() %>
+                                                </p>
+                                                <p><strong>Status:</strong>
+                                                    <%= election.status %>
+                                                </p>
+                                            </div>
+                                            <div class="election-actions">
+                                                <a href="/voting/results/<%= election._id %>" class="btn">View
+                                                    Results</a>
+                                            </div>
+                                        </div>
+                                        <% }); %>
+                                </div>
+                                <% } else { %>
+                                    <p class="no-data">You haven't voted in any elections yet.</p>
+                                    <% } %>
+                        </section>
     </div>
 
     <script src="/js/script.js"></script>

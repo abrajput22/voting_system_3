@@ -57,6 +57,12 @@ app.get('/', (req, res) => {
     res.render('index', { user: req.user || req.session.user });
 });
 
+// After successful database connection, initialize admin user
+mongoose.connection.once('open', async () => {
+    console.log('MongoDB connection established successfully');
+    await User.initializeAdmin();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);

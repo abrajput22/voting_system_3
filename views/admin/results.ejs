@@ -44,6 +44,15 @@
                         <p><strong>End Date:</strong>
                             <%= new Date(election.endDate).toLocaleDateString() %>
                         </p>
+                        <p><strong>Total Votes Cast:</strong>
+                            <%= election.totalVotes %>
+                        </p>
+                        <p><strong>Eligible Voters:</strong>
+                            <%= election.eligibleVotersCount %>
+                        </p>
+                        <p><strong>Voter Turnout:</strong>
+                            <%= ((election.totalVotes / election.eligibleVotersCount) * 100).toFixed(1) %>%
+                        </p>
                     </div>
                 </div>
 
@@ -64,6 +73,9 @@
                                         <div class="vote-count">
                                             <strong>Votes:</strong>
                                             <%= candidate.votes %>
+                                                <% if (election.totalVotes> 0) { %>
+                                                    (<%= ((candidate.votes / election.totalVotes) * 100).toFixed(1) %>%)
+                                                        <% } %>
                                         </div>
                                     </div>
                                     <% }); %>

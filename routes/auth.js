@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const User = require('../models/User');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/tokenUtils');
+const authController = require('../controllers/authController');
 
 // Google OAuth configuration
 passport.use(new (require('passport-google-oauth20').Strategy)({
@@ -13,27 +14,51 @@ passport.use(new (require('passport-google-oauth20').Strategy)({
 },
     async function (accessToken, refreshToken, profile, done) {
         try {
+            console.log('Google OAuth callback received:', {
+                email: profile.emails[0].value,
+                name: profile.displayName,
+                googleId: profile.id
+            });
+
             // Check if user already exists
             let user = await User.findOne({ email: profile.emails[0].value });
 
             if (!user) {
+                console.log('Creating new user from Google OAuth');
+
+                // Generate voter ID for new user
+                const voterId = await User.generateVoterId();
+                console.log('Generated voter ID for new user:', voterId);
+
                 // Create new user if doesn't exist
                 user = new User({
                     name: profile.displayName,
                     email: profile.emails[0].value,
                     googleId: profile.id,
                     role: 'voter',
-                    hasPassword: false // Flag to indicate if user needs to set password
+                    voterId: voterId,
+                    hasPassword: false
                 });
+
                 await user.save();
+                console.log('New user created successfully:', {
+                    id: user._id,
+                    email: user.email,
+                    voterId: user.voterId
+                });
             } else if (!user.googleId) {
+                console.log('Linking existing user with Google account:', user._id);
                 // If user exists but hasn't linked Google account
                 user.googleId = profile.id;
                 await user.save();
+                console.log('Google account linked successfully');
+            } else {
+                console.log('Existing Google user logged in:', user._id);
             }
 
             return done(null, user);
         } catch (error) {
+            console.error('Google OAuth error:', error);
             return done(error, null);
         }
     }));
@@ -65,34 +90,28 @@ router.get('/google/callback',
         failureMessage: true
     }),
     (req, res) => {
-        // Check if user needs to set password
-        if (!req.user.hasPassword) {
-            return res.redirect('/auth/set-password');
-        }
+        try {
+            console.log('Google OAuth callback successful, setting session for user:', req.user._id);
 
-        // Set user session
-        req.session.user = {
-            id: req.user._id,
-            name: req.user.name,
-            email: req.user.email,
-            role: req.user.role
-        };
+            // Set user session
+            req.session.user = {
+                id: req.user._id,
+                name: req.user.name,
+                email: req.user.email,
+                role: req.user.role,
+                voterId: req.user.voterId
+            };
 
-        // Send tokens in response
-        res.cookie('refreshToken', req.user.refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
-
-        // Set access token in response header
-        res.setHeader('Authorization', `Bearer ${req.user.accessToken}`);
-
-        // Redirect based on role
-        if (req.user.role === 'admin') {
-            res.redirect('/admin');
-        } else {
-            res.redirect('/voting');
+            console.log('Session set successfully, redirecting based on role');
+            // Redirect based on role
+            if (req.user.role === 'admin') {
+                res.redirect('/admin');
+            } else {
+                res.redirect('/voting');
+            }
+        } catch (error) {
+            console.error('Error in Google callback:', error);
+            res.redirect('/auth/login?error=' + encodeURIComponent('Authentication failed'));
         }
     }
 );
@@ -190,57 +209,7 @@ router.get('/login', (req, res) => {
 });
 
 // Regular login process
-router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Check if user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.redirect('/auth/login?error=Invalid credentials');
-        }
-
-        // Check if user has password
-        if (!user.hasPassword) {
-            return res.redirect('/auth/login?error=Please login with Google');
-        }
-
-        // Check password
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.redirect('/auth/login?error=Invalid credentials');
-        }
-
-        // Generate tokens
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
-
-        // Set user session
-        req.session.user = {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-        };
-
-        // Send tokens in response
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
-
-        // Redirect based on role
-        if (user.role === 'admin') {
-            res.redirect('/admin');
-        } else {
-            res.redirect('/voting');
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        res.redirect('/auth/login?error=' + encodeURIComponent(error.message));
-    }
-});
+router.post('/login', authController.login);
 
 // Register page
 router.get('/register', (req, res) => {
@@ -251,93 +220,10 @@ router.get('/register', (req, res) => {
 });
 
 // Register process
-router.post('/register', async (req, res) => {
-    try {
-        const { name, email, password, confirmPassword } = req.body;
-
-        // Validate input
-        if (!name || !email || !password || !confirmPassword) {
-            return res.redirect('/auth/register?error=All fields are required');
-        }
-
-        if (password.length < 6) {
-            return res.redirect('/auth/register?error=Password must be at least 6 characters long');
-        }
-
-        if (password !== confirmPassword) {
-            return res.redirect('/auth/register?error=Passwords do not match');
-        }
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.redirect('/auth/register?error=Email already registered');
-        }
-
-        // Create new user
-        const user = new User({
-            name,
-            email,
-            password,
-            role: 'voter',
-            hasPassword: true
-        });
-
-        await user.save();
-        console.log('User registered successfully:', { email: user.email, name: user.name });
-
-        // Generate tokens
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
-
-        // Set user session
-        req.session.user = {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-        };
-
-        // Send tokens in response
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
-
-        res.redirect('/voting');
-    } catch (error) {
-        console.error('Registration error:', error);
-        if (error.code === 11000) {
-            return res.redirect('/auth/register?error=Email already registered');
-        }
-        res.redirect('/auth/register?error=' + encodeURIComponent(error.message));
-    }
-});
+router.post('/register', authController.register);
 
 // Logout
-router.get('/logout', async (req, res) => {
-    try {
-        if (req.session.user) {
-            // Increment token version to invalidate all tokens
-            const user = await User.findById(req.session.user.id);
-            if (user) {
-                await user.incrementTokenVersion();
-            }
-        }
-
-        // Clear session
-        req.session.destroy();
-
-        // Clear refresh token cookie
-        res.clearCookie('refreshToken');
-
-        res.redirect('/');
-    } catch (error) {
-        console.error('Logout error:', error);
-        res.redirect('/');
-    }
-});
+router.get('/logout', authController.logout);
 
 // Refresh token route
 router.post('/refresh-token', async (req, res) => {

@@ -3,10 +3,16 @@ const mongoose = require('mongoose');
 const candidateSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     description: {
         type: String,
+        required: true
+    },
+    election: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Election',
         required: true
     },
     votes: {
@@ -17,4 +23,9 @@ const candidateSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model('Candidate', candidateSchema); 
+// Create a compound index to ensure unique candidate names within an election
+candidateSchema.index({ name: 1, election: 1 }, { unique: true });
+
+const Candidate = mongoose.model('Candidate', candidateSchema);
+
+module.exports = Candidate; 
