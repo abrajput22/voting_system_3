@@ -8,10 +8,11 @@ const Candidate = require('../models/Candidate');
 // Voting dashboard - show active elections
 router.get('/', isAuthenticated, async (req, res) => {
     try {
-        // Get active elections that user hasn't voted in
+        // Get active elections that user hasn't voted in and is eligible for
         const activeElections = await Election.find({
             status: 'active',
-            _id: { $nin: req.session.user.votedElections || [] }
+            _id: { $nin: req.session.user.votedElections || [] },
+            eligibleVoters: req.session.user.voterId
         }).populate('candidates');
 
         res.render('voting/dashboard', {
@@ -40,6 +41,11 @@ router.get('/election/:id', isAuthenticated, async (req, res) => {
 
         if (election.status !== 'active') {
             return res.redirect('/voting?error=This election is not active');
+        }
+
+        // Check if user is eligible to vote
+        if (!election.eligibleVoters.includes(req.session.user.voterId)) {
+            return res.redirect('/voting?error=You are not eligible to vote in this election');
         }
 
         // Check if user has already voted
@@ -73,6 +79,11 @@ router.post('/vote', isAuthenticated, async (req, res) => {
         }
         if (election.status !== 'active') {
             return res.redirect('/voting?error=This election is not active');
+        }
+
+        // Check if user is eligible to vote
+        if (!election.eligibleVoters.includes(req.session.user.voterId)) {
+            return res.redirect('/voting?error=You are not eligible to vote in this election');
         }
 
         // Check if user has already voted

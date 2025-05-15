@@ -46,7 +46,11 @@ const userSchema = new mongoose.Schema({
     votedElections: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Election'
-    }]
+    }],
+    voterId: {
+        type: String,
+        unique: true
+    }
 }, {
     timestamps: true
 });
@@ -96,6 +100,24 @@ userSchema.statics.createAdminIfNotExists = async function () {
     } catch (error) {
         console.error('Error creating admin user:', error);
     }
+};
+
+// Generate unique 6-digit voter ID
+userSchema.statics.generateVoterId = async function () {
+    let voterId;
+    let isUnique = false;
+
+    while (!isUnique) {
+        // Generate 6-digit number
+        voterId = Math.floor(100000 + Math.random() * 900000).toString();
+        // Check if it exists
+        const existingUser = await this.findOne({ voterId });
+        if (!existingUser) {
+            isUnique = true;
+        }
+    }
+
+    return voterId;
 };
 
 const User = mongoose.model('User', userSchema);

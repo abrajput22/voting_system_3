@@ -3,6 +3,7 @@ const router = express.Router();
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 const Election = require('../models/Election');
 const Candidate = require('../models/Candidate');
+const User = require('../models/User');
 
 // Admin dashboard
 router.get('/', isAuthenticated, isAdmin, async (req, res) => {
@@ -133,6 +134,87 @@ router.get('/results/:id', isAuthenticated, isAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('View results error:', error);
+        res.redirect('/admin?error=' + encodeURIComponent(error.message));
+    }
+});
+
+// Add voter to election
+router.post('/election/:id/add-voter', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const { voterId } = req.body;
+        const election = await Election.findById(req.params.id);
+
+        if (!election) {
+            return res.redirect('/admin?error=Election not found');
+        }
+
+        // Check if voter ID exists
+        const user = await User.findOne({ voterId });
+        if (!user) {
+            return res.redirect(`/admin/election/${election._id}?error=Invalid voter ID`);
+        }
+
+        // Add voter if not already in the list
+        if (!election.eligibleVoters.includes(voterId)) {
+            election.eligibleVoters.push(voterId);
+            await election.save();
+        }
+
+        res.redirect(`/admin/election/${election._id}?success=Voter added successfully`);
+    } catch (error) {
+        console.error('Add voter error:', error);
+        res.redirect('/admin?error=' + encodeURIComponent(error.message));
+    }
+});
+
+// Remove voter from election
+router.post('/election/:id/remove-voter', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const { voterId } = req.body;
+        const election = await Election.findById(req.params.id);
+
+        if (!election) {
+            return res.redirect('/admin?error=Election not found');
+        }
+
+        // Remove voter from the list
+        election.eligibleVoters = election.eligibleVoters.filter(id => id !== voterId);
+        await election.save();
+
+        res.redirect(`/admin/election/${election._id}?success=Voter removed successfully`);
+    } catch (error) {
+        console.error('Remove voter error:', error);
+        res.redirect('/admin?error=' + encodeURIComponent(error.message));
+    }
+});
+
+// Search voter in election
+router.get('/election/:id/search-voter', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const { voterId } = req.query;
+        const election = await Election.findById(req.params.id);
+
+        if (!election) {
+            return res.redirect('/admin?error=Election not found');
+        }
+
+        const isEligible = election.eligibleVoters.includes(voterId);
+        const user = await User.findOne({ voterId });
+
+        res.render('admin/search-voter', {
+            user: req.session.user,
+            election,
+            searchResult: user ? {
+                voterId: user.voterId,
+                name: user.name,
+                email: user.email,
+                isEligible
+            } : null,
+            error: req.query.error,
+            success: req.query.success
+        });
+    } catch (error) {
+        console.error('Search voter error:', error);
         res.redirect('/admin?error=' + encodeURIComponent(error.message));
     }
 });

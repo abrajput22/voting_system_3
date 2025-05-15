@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Voter - Online Voting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">Online Voting System</a>
+        <div class="nav-links">
+            <a href="/admin" class="nav-link">Dashboard</a>
+            <a href="/profile" class="nav-link">Profile</a>
+            <a href="/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Search Voter in <%= election.title %>
+        </h1>
+
+        <% if (error) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <% if (success) { %>
+                    <div class="success-message">
+                        <%= success %>
+                    </div>
+                    <% } %>
+
+                        <div class="search-section">
+                            <form action="/admin/election/<%= election._id %>/search-voter" method="GET"
+                                class="search-form">
+                                <div class="form-group">
+                                    <label for="voterId">Enter Voter ID:</label>
+                                    <input type="text" id="voterId" name="voterId" required>
+                                </div>
+                                <button type="submit" class="btn">Search</button>
+                            </form>
+                        </div>
+
+                        <% if (searchResult) { %>
+                            <div class="search-result">
+                                <h2>Voter Details</h2>
+                                <div class="voter-details">
+                                    <p><strong>Name:</strong>
+                                        <%= searchResult.name %>
+                                    </p>
+                                    <p><strong>Email:</strong>
+                                        <%= searchResult.email %>
+                                    </p>
+                                    <p><strong>Voter ID:</strong>
+                                        <%= searchResult.voterId %>
+                                    </p>
+                                    <p><strong>Status:</strong>
+                                        <% if (searchResult.isEligible) { %>
+                                            <span class="eligible">Eligible to vote</span>
+                                            <% } else { %>
+                                                <span class="not-eligible">Not eligible to vote</span>
+                                                <% } %>
+                                    </p>
+                                </div>
+
+                                <div class="voter-actions">
+                                    <% if (!searchResult.isEligible) { %>
+                                        <form action="/admin/election/<%= election._id %>/add-voter" method="POST">
+                                            <input type="hidden" name="voterId" value="<%= searchResult.voterId %>">
+                                            <button type="submit" class="btn btn-success">Add to Eligible
+                                                Voters</button>
+                                        </form>
+                                        <% } else { %>
+                                            <form action="/admin/election/<%= election._id %>/remove-voter"
+                                                method="POST">
+                                                <input type="hidden" name="voterId" value="<%= searchResult.voterId %>">
+                                                <button type="submit" class="btn btn-danger">Remove from Eligible
+                                                    Voters</button>
+                                            </form>
+                                            <% } %>
+                                </div>
+                            </div>
+                            <% } else if (req.query.voterId) { %>
+                                <div class="no-result">
+                                    <p>No voter found with the provided Voter ID.</p>
+                                </div>
+                                <% } %>
+
+                                    <div class="back-link">
+                                        <a href="/admin/election/<%= election._id %>" class="btn">Back to Election</a>
+                                    </div>
+    </div>
+</body>
+
+</html>

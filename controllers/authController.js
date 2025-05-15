@@ -15,23 +15,40 @@ exports.register = async (req, res) => {
             throw new Error('Invalid role selected');
         }
 
+        // Generate unique voter ID for regular users
+        const voterId = role === 'user' ? await User.generateVoterId() : null;
+
         const user = await User.create({
             name,
             email,
             password,
-            role
+            role,
+            voterId
         });
 
         req.session.user = {
             id: user._id,
             name: user.name,
             email: user.email,
-            role: user.role
+            role: user.role,
+            voterId: user.voterId
         };
 
-        res.redirect('/');
+        // If user is admin, redirect to admin dashboard
+        if (role === 'admin') {
+            return res.redirect('/admin');
+        }
+
+        // For regular users, show success message with voter ID
+        res.render('register-success', {
+            user: req.session.user,
+            voterId: user.voterId
+        });
     } catch (error) {
-        throw error;
+        res.render('register', {
+            error: error.message,
+            user: req.session.user
+        });
     }
 };
 

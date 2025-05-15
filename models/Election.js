@@ -26,6 +26,15 @@ const electionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Candidate'
     }],
+    eligibleVoters: [{
+        type: String,  // Store voter IDs
+        required: true
+    }],
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     totalVotes: {
         type: Number,
         default: 0
